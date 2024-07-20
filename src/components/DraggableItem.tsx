@@ -20,7 +20,6 @@ const DraggableItem = (props: Props) => {
   const style = {
     transition,
     transform: CSS.Transform.toString(transform),
-    backgroundImage: `url(${item.imageUrl})`,
   };
 
   return (
@@ -28,10 +27,14 @@ const DraggableItem = (props: Props) => {
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      className="w-[100px] h-[100px] bg-gray-400 rounded-md mx-0.5"
+      className="w-[100px] h-[100px] rounded-md m-0.5 overflow-hidden"
       style={style}
     >
-      <h2>{item.id}</h2>
+      <img
+        src={item.imageUrl}
+        alt={`Item ${item.id}`}
+        className="w-full h-full object-cover"
+      />
     </div>
   );
 };

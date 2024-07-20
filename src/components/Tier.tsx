@@ -1,17 +1,15 @@
-import { SortableContext, useSortable } from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Item, Row } from "../Type";
-import DraggableItem from "./DraggableItem";
 import ItemContainer from "./ItemContainer";
 
 interface Props {
   row: Row;
   items: Item[];
-  createItem: (columnId: number) => void;
 }
 
 function Tier(props: Props) {
-  const { row, createItem, items } = props;
+  const { row, items } = props;
 
   const { setNodeRef, attributes, listeners, transform, transition } =
     useSortable({
@@ -31,7 +29,7 @@ function Tier(props: Props) {
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-teal-950 w-[1000px] min-h-[100px] max-w-[1000px] rounded-md flex"
+      className="bg-teal-950 w-[1000px] min-h-[105px] max-w-[1000px] rounded-md flex"
     >
       {/* Tier Title */}
       <div
@@ -45,16 +43,6 @@ function Tier(props: Props) {
 
       {/* Item container */}
       <ItemContainer items={items} />
-
-      {/* <SortableContext items={items}>
-        <div className="flex-1 flex items-center">
-          {items.map((item) => (
-            <DraggableItem key={row.id} item={item} />
-          ))}
-        </div>
-      </SortableContext> */}
-
-      <button onClick={() => createItem(row.id)}>add item</button>
     </div>
   );
 }

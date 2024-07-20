@@ -86,19 +86,20 @@ function Board() {
     }
   }
 
-  const createItem = (tierId: number) => {
+  const createItem = (columnId: number, imageUrl: string) => {
     const newItem: Item = {
-      id: Math.floor(Math.random() * Date.now()), // Generate a random ID
-      imageUrl: "path/to/your/image.jpg", // Replace with actual image URL
-      tierId: tierId,
+      id: Date.now(), // Unique ID
+      imageUrl,
+      tierId: columnId,
     };
     setItems([...items, newItem]);
   };
 
   return (
     <>
-      <div
-        className="
+      <DndContext onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
+        <div
+          className="
         m-auto
         flex
         min-h-screen
@@ -108,8 +109,7 @@ function Board() {
         overflow-y-auto
         px-[40px]
         "
-      >
-        <DndContext onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
+        >
           <div className="flex flex-col items-center m-auto gap-4">
             <div className="flex flex-col gap-2 ">
               <SortableContext items={rows}>
@@ -117,7 +117,6 @@ function Board() {
                   <Tier
                     key={row.id}
                     row={row}
-                    createItem={createItem}
                     items={items.filter((item) => item.tierId === row.id)}
                   ></Tier>
                 ))}
@@ -133,9 +132,13 @@ function Board() {
               Add Tier
             </button>
           </div>
-        </DndContext>
-      </div>
-      <ItemPool />
+        </div>
+
+        <ItemPool
+          items={items.filter((item) => item.tierId === 0)}
+          createItem={createItem}
+        />
+      </DndContext>
     </>
   );
 }
