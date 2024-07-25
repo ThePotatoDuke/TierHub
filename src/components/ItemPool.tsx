@@ -1,28 +1,21 @@
-import { useRef, useState } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import { Item } from "../Type";
 import ItemContainer from "./ItemContainer";
 interface Props {
   items: Item[];
-  createItem: (columnId: number, imageUrl: string) => void;
+  createItems: (tierID: number, imageUrl: string[]) => void;
 }
-
 const ItemPool = (props: Props) => {
-  const { createItem, items } = props;
+  const { createItems, items } = props;
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
       const newFiles = Array.from(files);
-      console.log(newFiles);
-      newFiles.forEach((file) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          createItem(0, reader.result as string); // Adjust `createItem` if needed
-        };
-        reader.readAsDataURL(file);
-      });
+
+      const imageUrls = newFiles.map((file) => URL.createObjectURL(file));
+      createItems(0, imageUrls);
     }
   };
   const handleClick = () => {

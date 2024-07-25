@@ -1,30 +1,67 @@
-import React, { act, useMemo, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
-import { Item, Row } from "../Type";
-import Tier from "./Tier";
-import {
-  closestCorners,
-  DndContext,
-  DragEndEvent,
-  DragOverEvent,
-  DragStartEvent,
-} from "@dnd-kit/core";
+import { DndContext, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext } from "@dnd-kit/sortable";
+import { faPlusCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { act, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { Item, Row } from "../Type";
 import ItemPool from "./ItemPool";
+import Tier from "./Tier";
+
 function Board() {
+  const { tierListId } = useParams();
   const [rows, setRows] = useState<Row[]>([]);
   const [items, setItems] = useState<Item[]>([]);
 
-  // Function to create a new row with 3 items
-  const createNewRow = (color: string) => {
-    const newRow: Row = {
-      id: rows.length + 1,
-      title: `Tier ${rows.length + 1}`,
-      color: color,
+  useEffect(() => {
+    const fetchTiers = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:8090/api/tier_lists/${tierListId}/tiers`
+        );
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        const data = await response.json();
+        setRows(data);
+      } catch (error) {
+        console.error(
+          "There has been a problem with your fetch operation:",
+          error
+        );
+      }
+    };
+
+    fetchTiers();
+  }, [tierListId]);
+
+  const createNewRow = async (color: string) => {
+    const newRow = {
+      name: `Tier ${rows.length + 1}`,
+      position: rows.length + 1,
+      color,
+      tierListID: tierListId,
       items: [],
     };
-    setRows([...rows, newRow]);
+
+    try {
+      const response = await fetch("http://localhost:8090/api/tiers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newRow),
+      });
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const savedRow = await response.json();
+      setRows((prevRows) => [...prevRows, savedRow]);
+    } catch (error) {
+      console.error("Error saving the new row:", error);
+    }
   };
 
   const getRowPos = (id: number | string): number => {
@@ -86,13 +123,44 @@ function Board() {
     }
   }
 
-  const createItem = (columnId: number, imageUrl: string) => {
-    const newItem: Item = {
-      id: Date.now(), // Unique ID
+  const createItems = (tierId: number, imageUrls: string[]) => {
+    const newItems: Item[] = imageUrls.map((imageUrl) => ({
+      id: Math.floor(Math.random() * 1000), // Unique ID
       imageUrl,
-      tierId: columnId,
-    };
-    setItems([...items, newItem]);
+      tierId,
+    }));
+
+    setItems((prevItems) => [...prevItems, ...newItems]);
+  };
+  const handleTierUpdate = async (updatedRow: Row) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8090/api/tiers/${updatedRow.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: updatedRow.name,
+            color: updatedRow.color,
+            // Add other necessary fields
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update tier");
+      }
+
+      // Update the state or perform other necessary actions
+      setRows((prev) =>
+        prev.map((tier) => (tier.id === updatedRow.id ? updatedRow : tier))
+      );
+    } catch (error) {
+      console.error("Error updating tier:", error);
+      alert("Failed to update tier");
+    }
   };
 
   return (
@@ -118,6 +186,7 @@ function Board() {
                     key={row.id}
                     row={row}
                     items={items.filter((item) => item.tierId === row.id)}
+                    onUpdate={handleTierUpdate}
                   ></Tier>
                 ))}
               </SortableContext>
@@ -136,7 +205,7 @@ function Board() {
 
         <ItemPool
           items={items.filter((item) => item.tierId === 0)}
-          createItem={createItem}
+          createItems={createItems}
         />
       </DndContext>
     </>
