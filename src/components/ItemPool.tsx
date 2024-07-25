@@ -3,19 +3,18 @@ import { Item } from "../Type";
 import ItemContainer from "./ItemContainer";
 interface Props {
   items: Item[];
-  createItems: (imageUrl: string[]) => void;
+  createItems: (files: File[] | null) => void;
 }
+
 const ItemPool = (props: Props) => {
   const { createItems, items } = props;
-
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
       const newFiles = Array.from(files);
-
-      const imageUrls = newFiles.map((file) => URL.createObjectURL(file));
-      createItems(imageUrls);
+      createItems(newFiles); // Pass the array of files to createItems
     }
   };
   const handleClick = () => {

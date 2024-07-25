@@ -102,6 +102,7 @@ const ListsPage = () => {
       };
 
       const response = await fetch("http://localhost:8090/api/tier_lists", {
+        // DO I NEED THIS PART???????????????
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -131,17 +131,68 @@ function Board() {
     }
   }
 
-  const createItems = (imageUrls: string[]) => {
+  const createItems = async (files: File[] | null) => {
     if (!defaultTier) {
       console.error("Default tier is not set");
       return;
     }
 
-    const newItems: Item[] = imageUrls.map((imageUrl) => ({
-      id: Math.floor(Math.random() * 1000), // Generate a unique ID
-      imageUrl,
-      tierId: defaultTier.id, // Use defaultTier ID
-    }));
+    if (!files || files.length === 0) {
+      console.error("No files selected");
+      return;
+    }
+
+    const newItems: Item[] = [];
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const uploadResponse = await fetch(
+          "http://localhost:8090/api/tier_lists/upload",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload image");
+        }
+
+        const uploadData = await uploadResponse.json();
+        const imageUrl = uploadData.imageUrl;
+
+        // Assuming you want to generate `orderNo` dynamically, you can modify this logic as needed
+        const orderNo = Math.floor(Math.random() * 1000);
+
+        const itemDTO = {
+          orderNo,
+          imageURL: imageUrl,
+          tierID: defaultTier.id,
+        };
+
+        const createItemResponse = await fetch(
+          "http://localhost:8090/api/items",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(itemDTO),
+          }
+        );
+
+        if (!createItemResponse.ok) {
+          throw new Error("Failed to create item");
+        }
+
+        const createdItem = await createItemResponse.json();
+        newItems.push(createdItem);
+      } catch (error) {
+        console.error("Error creating item:", error);
+      }
+    }
 
     setItems((prevItems) => [...prevItems, ...newItems]);
   };
