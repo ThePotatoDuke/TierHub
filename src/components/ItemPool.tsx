@@ -3,7 +3,7 @@ import { Item } from "../Type";
 import ItemContainer from "./ItemContainer";
 interface Props {
   items: Item[];
-  createItems: (tierID: number, imageUrl: string[]) => void;
+  createItems: (imageUrl: string[]) => void;
 }
 const ItemPool = (props: Props) => {
   const { createItems, items } = props;
@@ -15,7 +15,7 @@ const ItemPool = (props: Props) => {
       const newFiles = Array.from(files);
 
       const imageUrls = newFiles.map((file) => URL.createObjectURL(file));
-      createItems(0, imageUrls);
+      createItems(imageUrls);
     }
   };
   const handleClick = () => {

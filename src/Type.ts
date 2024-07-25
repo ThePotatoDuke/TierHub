@@ -1,7 +1,7 @@
 export type Item = {
   id: number;
   imageUrl: string;
-  tierId: number | string;
+  tierId: number | string | null;
 };
 
 export type Row = {

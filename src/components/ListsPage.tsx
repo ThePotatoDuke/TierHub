@@ -197,14 +197,12 @@ const ListsPage = () => {
     <div className="p-4">
       <div className="p-4 flex flex-wrap gap-3">
         {tierLists.map((tierList) => (
-          <div className=" ">
-            <ListCard
-              key={tierList.id}
-              tierList={tierList}
-              onEdit={() => handleEditListClick(tierList)}
-              onDelete={handleDelete}
-            />
-          </div>
+          <ListCard
+            key={tierList.id}
+            tierList={tierList}
+            onEdit={() => handleEditListClick(tierList)}
+            onDelete={handleDelete}
+          />
         ))}
         <div
           className="bg-slate-900 border-slate-800 border-4 border-dashed rounded-lg items-center justify-center cursor-pointer flex flex-col h-56 w-64"

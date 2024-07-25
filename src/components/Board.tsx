@@ -12,6 +12,7 @@ function Board() {
   const { tierListId } = useParams();
   const [rows, setRows] = useState<Row[]>([]);
   const [items, setItems] = useState<Item[]>([]);
+  const [defaultTier, setDefaultTier] = useState<Row | null>(null);
 
   useEffect(() => {
     const fetchTiers = async () => {
@@ -23,7 +24,14 @@ function Board() {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        setRows(data);
+        console.log(data); // Log the data to inspect its structure
+
+        // Assuming `data.defaultTier` is an object and you need its `id`
+        if (data.defaultTier) {
+          setDefaultTier(data.defaultTier);
+        }
+
+        setRows(data.tiers); // Adjust according to your data structure
       } catch (error) {
         console.error(
           "There has been a problem with your fetch operation:",
@@ -123,15 +131,21 @@ function Board() {
     }
   }
 
-  const createItems = (tierId: number, imageUrls: string[]) => {
+  const createItems = (imageUrls: string[]) => {
+    if (!defaultTier) {
+      console.error("Default tier is not set");
+      return;
+    }
+
     const newItems: Item[] = imageUrls.map((imageUrl) => ({
-      id: Math.floor(Math.random() * 1000), // Unique ID
+      id: Math.floor(Math.random() * 1000), // Generate a unique ID
       imageUrl,
-      tierId,
+      tierId: defaultTier.id, // Use defaultTier ID
     }));
 
     setItems((prevItems) => [...prevItems, ...newItems]);
   };
+
   const handleTierUpdate = async (updatedRow: Row) => {
     try {
       const response = await fetch(
@@ -204,7 +218,7 @@ function Board() {
         </div>
 
         <ItemPool
-          items={items.filter((item) => item.tierId === 0)}
+          items={items.filter((item) => item.tierId === defaultTier?.id)}
           createItems={createItems}
         />
       </DndContext>
