@@ -1,6 +1,7 @@
 import React, { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { TierListDTO } from "../Type";
 
-interface NewListModalProps {
+interface ListModal {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (title: string, description: string, image: File | null) => void;
@@ -11,15 +12,10 @@ interface NewListModalProps {
     image: File | null
   ) => void;
   isEditing: boolean;
-  currentList?: {
-    id: number;
-    title: string;
-    description: string;
-    imageUrl: string;
-  };
+  currentList?: TierListDTO | null;
 }
 
-const ListModal: React.FC<NewListModalProps> = ({
+const NewListModal: React.FC<ListModal> = ({
   isOpen,
   onClose,
   onSubmit,
@@ -33,7 +29,7 @@ const ListModal: React.FC<NewListModalProps> = ({
 
   useEffect(() => {
     if (isEditing && currentList) {
-      setNewListTitle(currentList.title);
+      setNewListTitle(currentList.name);
       setNewListDesc(currentList.description);
       // Assume image will be updated if a new file is selected, otherwise retain the current image URL
     } else {
@@ -150,4 +146,4 @@ const ListModal: React.FC<NewListModalProps> = ({
   );
 };
 
-export default ListModal;
+export default NewListModal;
