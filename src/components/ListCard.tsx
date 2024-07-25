@@ -6,9 +6,11 @@ import { faEdit, faTrash } from "@fortawesome/free-solid-svg-icons";
 const ListCard = ({
   tierList,
   onDelete,
+  onEdit,
 }: {
   tierList: TierListDTO;
   onDelete: (id: number) => void;
+  onEdit: () => void;
 }) => {
   return (
     <div className="relative bg-white rounded-lg overflow-hidden shadow-md flex flex-col h-56 w-64">
@@ -32,7 +34,10 @@ const ListCard = ({
           </p>
         </div>
       </Link>
-      <button className="absolute bottom-2 right-9 bg-teal-500 text-white py-1 px-2 text-xs rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <button
+        onClick={() => onEdit()}
+        className="absolute bottom-2 right-9 bg-teal-500 text-white py-1 px-2 text-xs rounded hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
         <FontAwesomeIcon icon={faEdit} className="text-xs" />
       </button>
       <button

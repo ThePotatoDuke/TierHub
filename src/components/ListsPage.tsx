@@ -3,6 +3,7 @@ import { TierListDTO } from "../Type";
 import ListCard from "./ListCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
+import ListModal from "./ListModal";
 
 const fetchTierListsByUserId = async (userId: number) => {
   const response = await fetch(
@@ -19,10 +20,8 @@ const ListsPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newListTitle, setNewListTitle] = useState("");
-  const [newListDesc, setNewListDesc] = useState("");
-
-  const [newListImage, setNewListImage] = useState<File | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentList, setCurrentList] = useState<TierListDTO | null>(null);
 
   useEffect(() => {
     const userId = 1; // Replace with dynamic user ID if needed
@@ -30,13 +29,13 @@ const ListsPage = () => {
       .then((data) => {
         setTierLists(data);
         setLoading(false);
-        console.log(data);
       })
-      .catch((err) => {
+      .catch(() => {
         setError("Failed to load tier lists");
         setLoading(false);
       });
   }, []);
+
   const handleDelete = async (id: number) => {
     try {
       const response = await fetch(
@@ -48,7 +47,6 @@ const ListsPage = () => {
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-      // Remove the deleted tier list from state
       setTierLists(tierLists.filter((tierList) => tierList.id !== id));
     } catch (error) {
       console.error("Error deleting tier list:", error);
@@ -56,6 +54,14 @@ const ListsPage = () => {
   };
 
   const handleNewListClick = () => {
+    setCurrentList(null);
+    setIsEditing(false);
+    setIsModalOpen(true);
+  };
+
+  const handleEditListClick = (list: TierListDTO) => {
+    setCurrentList(list);
+    setIsEditing(true);
     setIsModalOpen(true);
   };
 
@@ -63,34 +69,14 @@ const ListsPage = () => {
     setIsModalOpen(false);
   };
 
-  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNewListTitle(event.target.value);
-  };
-
-  const handleDescripitonChange = (
-    event: React.ChangeEvent<HTMLInputElement>
+  const handleFormSubmit = async (
+    title: string,
+    description: string,
+    image: File | null
   ) => {
-    setNewListDesc(event.target.value);
-  };
-
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      setNewListImage(event.target.files[0]);
-    }
-  };
-
-  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!newListTitle || !newListImage) {
-      alert("Both title and image are required.");
-      return;
-    }
-
     try {
-      // Upload image to the backend
       const formData = new FormData();
-      formData.append("file", newListImage);
+      formData.append("file", image!);
 
       const uploadResponse = await fetch(
         "http://localhost:8090/api/tier_lists/upload",
@@ -108,10 +94,10 @@ const ListsPage = () => {
       const imageUrl = uploadData.imageUrl;
 
       const tierListDTO = {
-        name: newListTitle,
+        name: title,
         imageUrl: imageUrl,
         userId: 1,
-        description: newListDesc,
+        description: description,
         categoryId: null,
       };
 
@@ -136,8 +122,76 @@ const ListsPage = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  const handleFormUpdate = async (
+    id: number,
+    title: string,
+    description: string,
+    image: File | null
+  ) => {
+    try {
+      let imageUrl = currentList!.imageUrl;
+
+      if (image) {
+        const formData = new FormData();
+        formData.append("file", image);
+
+        const uploadResponse = await fetch(
+          "http://localhost:8090/api/tier_lists/upload",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload image");
+        }
+
+        const uploadData = await uploadResponse.json();
+        imageUrl = uploadData.imageUrl;
+      }
+
+      const updatedTierListDTO = {
+        name: title,
+        imageUrl: imageUrl,
+        userId: 1,
+        description: description,
+        categoryId: null,
+      };
+
+      const response = await fetch(
+        `http://localhost:8090/api/tier_lists/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedTierListDTO),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update tier list");
+      }
+
+      const updatedTierList = await response.json();
+      setTierLists((prevTierLists) =>
+        prevTierLists.map((list) => (list.id === id ? updatedTierList : list))
+      );
+      handleCloseModal();
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error updating tier list");
+    }
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
 
   return (
     <div className="p-4">
@@ -147,6 +201,7 @@ const ListsPage = () => {
             <ListCard
               key={tierList.id}
               tierList={tierList}
+              onEdit={() => handleEditListClick(tierList)}
               onDelete={handleDelete}
             />
           </div>
@@ -162,81 +217,20 @@ const ListsPage = () => {
           />
         </div>
       </div>
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-4 rounded-lg">
-            <h2 className="text-xl text-gray-600 font-bold mb-4">
-              Create New List
-            </h2>
-
-            <form onSubmit={handleFormSubmit}>
-              <div className="mb-4">
-                <label
-                  htmlFor="title"
-                  className="block text-sm font-medium text-gray-600"
-                >
-                  Title
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  value={newListTitle}
-                  onChange={handleTitleChange}
-                  className="mt-1 p-2 border border-gray-300 rounded-md w-full text-gray-800"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-600"
-                >
-                  Description
-                </label>
-                <input
-                  type="text"
-                  id="description"
-                  value={newListDesc}
-                  onChange={handleDescripitonChange}
-                  className="mt-1 p-2 border border-gray-300 rounded-md w-full text-gray-800"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="image"
-                  className="block text-sm font-medium text-gray-800"
-                >
-                  Image
-                </label>
-                <input
-                  type="file"
-                  id="image"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="mt-1 p-2 border border-gray-300 rounded-md w-full text-gray-800"
-                  required
-                />
-              </div>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="mr-2 px-4 py-2 bg-gray-300 text-gray-700 rounded-md"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-teal-500 text-white rounded-md"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <button
+        className="fixed bottom-4 right-4 p-4 bg-teal-500 text-white rounded-full shadow-md"
+        onClick={handleNewListClick}
+      >
+        <FontAwesomeIcon icon={faCirclePlus} size="2x" />
+      </button>
+      <ListModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleFormSubmit}
+        onUpdate={handleFormUpdate}
+        isEditing={isEditing}
+        currentList={currentList}
+      />
     </div>
   );
 };
